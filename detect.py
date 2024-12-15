@@ -4,13 +4,22 @@ import cv2
 import numpy as np
 from collections import defaultdict
 import time
+import subprocess
+
+class Notifier:
+    def __init__(self):
+        pass
+
+    def speak(self, text):
+        subprocess.run(['say', text])
 
 class VehicleTracker:
-    def __init__(self, confidence_threshold=0.5, max_disappeared=30*10):
+    def __init__(self, confidence_threshold=0.4, max_disappeared=30*10):
         # Initialize YOLO model with GPU support
+        self.notifier = Notifier()
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         print(f"Using device: {self.device}")
-        
+        self.notifier.speak("Detection Initiated")
         # Load YOLO model
         self.model = YOLO('yolov8s.pt')  # or 'yolov8n.pt' for less accuracy but faster inference
         self.model.to(self.device)
@@ -82,6 +91,7 @@ class VehicleTracker:
                     break
             
             if not matched:
+                self.notifier.speak("Vehicle Arriving")
                 self.vehicles[self.next_vehicle_id] = {
                     "box": box,
                     "disappeared": 0
@@ -92,6 +102,7 @@ class VehicleTracker:
         # Remove vehicles that have disappeared for too long
         for vehicle_id in list(self.vehicles.keys()):
             if self.vehicles[vehicle_id]["disappeared"] > self.max_disappeared:
+                self.notifier.speak("Vehicle Leaving")
                 del self.vehicles[vehicle_id]
     
     # Calculate IoU between two boxes (Intersection over Union)
@@ -182,5 +193,5 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-if __name__ == "__main__":
+if __name__ == "__main__":   
     main()
