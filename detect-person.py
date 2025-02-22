@@ -166,7 +166,7 @@ def main():
         {
             'url': 'rtsp://admin:L2EC70CF@d5030edfff7a.sn.mynetname.net:554/cam/realmonitor?channel=1&subtype=1',
             'name': 'UVK Gate',
-            'roi': (200, 100, 300, 300)
+            'roi': (250, 0, 450, 400)
         },
         {
             'url': 'rtsp://admin:L201353B@hcr086zs3b5.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
