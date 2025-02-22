@@ -21,7 +21,7 @@ class VehicleTracker:
         print(f"Using device: {self.device}")
         self.notifier.speak("Detection Initiated")
         # Load YOLO model
-        self.model = YOLO('yolov8s.pt')  # or 'yolov8n.pt' for less accuracy but faster inference
+        self.model = YOLO('yolov8n.pt')  # or 'yolov8n.pt' for less accuracy but faster inference
         self.model.to(self.device)
         
         # Tracking parameters
@@ -150,7 +150,7 @@ def main():
     tracker = VehicleTracker()
     
     # Access RTSP stream
-    cap = cv2.VideoCapture('rtsp://192.168.1.1:7447/5EPTINH0aTXqTqC3')
+    cap = cv2.VideoCapture('rtsp://admin:L268C6B7@d5030edfff7a.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1&unicast=true&proto=Onvif')
     
     # Set buffer size
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
