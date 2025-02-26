@@ -110,7 +110,7 @@ def monitor_camera(camera_url, window_name, roi, stop_event, display_frames, dis
         persons = detection.detect_persons(frame)
         if persons:
             detection.notifier.speak("There is a person")
-            detection.export_image(frame, window_name)
+        # detection.export_image(frame, window_name)
 
         processed_frame = detection.draw_persons(frame, persons)
         cv2.putText(processed_frame, window_name, (10, 30),
@@ -172,6 +172,76 @@ def main():
             'url': 'rtsp://admin:L201353B@hcr086zs3b5.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
             'name': 'LBB Rooftop',
             'roi': (150, 20, 500, 500)
+        },
+        {
+            'url': 'rtsp://admin:L2F2A85E@192.168.1.192:554/cam/realmonitor?channel=1&subtype=1',
+            'name': 'AirCity Labs',
+            'roi': (10, 10, 500, 400)
+        },
+        {
+            'url': 'rtsp://admin:L297FC1C@192.168.1.185:554/cam/realmonitor?channel=1&subtype=1',
+            'name': 'AirCity Garden',
+            'roi': (10, 10, 200, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/202',
+            'name': 'HIK Vision 1',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/302',
+            'name': 'HIK Vision 2',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/402',
+            'name': 'HIK Vision 3',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/502',
+            'name': 'HIK Vision 4',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/602',
+            'name': 'HIK Vision 5',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/702',
+            'name': 'HIK Vision 6',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/802',
+            'name': 'HIK Vision 7',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/902',
+            'name': 'HIK Vision 8',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1002',
+            'name': 'HIK Vision 9',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1102',
+            'name': 'HIK Vision 10',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1202',
+            'name': 'HIK Vision 11',
+            'roi': (10, 10, 300, 500)
+        },
+        {
+            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1402',
+            'name': 'HIK Vision 12',
+            'roi': (10, 10, 300, 500)
         }
     ]
 
