@@ -27,7 +27,7 @@ class Notifier:
 
 
 class PersonDetection:
-    def __init__(self, confidence_threshold=0.4, roi=None):
+    def __init__(self, confidence_threshold=0.4, roi=None, movement_threshold=5.0, history_size=3):
         # Use MPS if available (for Apple Silicon), otherwise CPU.
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         print(f"Using device: {self.device}")
@@ -38,6 +38,11 @@ class PersonDetection:
         self.notifier = Notifier()
         # roi is a tuple (x, y, w, h); if None, process full frame.
         self.roi = roi
+        self.movement_threshold = movement_threshold
+        self.previous_frame = None
+        self.frame_history = []
+        self.history_size = history_size
+        self.consecutive_detections = {}  # Track consecutive detections by position
 
     def _inside_roi(self, box):
         if self.roi is None:
@@ -53,10 +58,8 @@ class PersonDetection:
         results = self.model(frame_rgb, verbose=False)
 
         # Initialize previous_frame attribute if it doesn't exist
-        if not hasattr(self, 'previous_frame'):
+        if self.previous_frame is None:
             self.previous_frame = frame.copy()
-            self.frame_history = []
-            self.movement_threshold = 5.0  # Adjust this threshold based on testing
             return []
 
         # Calculate frame difference to detect motion
@@ -64,6 +67,15 @@ class PersonDetection:
         gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
         blur_diff = cv2.GaussianBlur(gray_diff, (5, 5), 0)
         _, thresh_diff = cv2.threshold(blur_diff, 20, 255, cv2.THRESH_BINARY)
+
+        # Update detection tracking dict with age management
+        current_time = time.time()
+        outdated_keys = []
+        for pos, (last_time, count) in self.consecutive_detections.items():
+            if current_time - last_time > 5.0:  # Remove entries older than 5 seconds
+                outdated_keys.append(pos)
+        for key in outdated_keys:
+            del self.consecutive_detections[key]
 
         persons = []
         for result in results:
@@ -88,11 +100,32 @@ class PersonDetection:
                         area = w * h
                         motion_percentage = (motion_pixels / area) * 100
 
-                        # If motion exceeds threshold, consider it a person
-                        if motion_percentage > self.movement_threshold:
-                            persons.append(candidate)
+                        # Position key for tracking (based on grid cell)
+                        grid_x, grid_y = x1 // 50, y1 // 50
+                        pos_key = (grid_x, grid_y)
 
-        # Update the previous frame
+                        # Update tracking for this position
+                        if motion_percentage > self.movement_threshold:
+                            if pos_key in self.consecutive_detections:
+                                _, count = self.consecutive_detections[pos_key]
+                                self.consecutive_detections[pos_key] = (current_time, count + 1)
+                            else:
+                                self.consecutive_detections[pos_key] = (current_time, 1)
+
+                            # Only add person if detected consistently or with significant motion
+                            if self.consecutive_detections[pos_key][
+                                1] >= 2 or motion_percentage > self.movement_threshold * 2:
+                                persons.append(candidate)
+                        else:
+                            # Reduce confidence for this position
+                            if pos_key in self.consecutive_detections:
+                                _, count = self.consecutive_detections[pos_key]
+                                self.consecutive_detections[pos_key] = (current_time, max(0, count - 1))
+
+        # Update frame history
+        self.frame_history.append(frame.copy())
+        if len(self.frame_history) > self.history_size:
+            self.frame_history.pop(0)
         self.previous_frame = frame.copy()
 
         return persons
