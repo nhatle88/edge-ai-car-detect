@@ -51,6 +51,20 @@ class PersonDetection:
     def detect_persons(self, frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.model(frame_rgb, verbose=False)
+
+        # Initialize previous_frame attribute if it doesn't exist
+        if not hasattr(self, 'previous_frame'):
+            self.previous_frame = frame.copy()
+            self.frame_history = []
+            self.movement_threshold = 5.0  # Adjust this threshold based on testing
+            return []
+
+        # Calculate frame difference to detect motion
+        diff = cv2.absdiff(self.previous_frame, frame)
+        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        blur_diff = cv2.GaussianBlur(gray_diff, (5, 5), 0)
+        _, thresh_diff = cv2.threshold(blur_diff, 20, 255, cv2.THRESH_BINARY)
+
         persons = []
         for result in results:
             boxes = result.boxes
@@ -59,11 +73,28 @@ class PersonDetection:
                 conf = float(box.conf[0])
                 if conf > self.confidence_threshold and cls == self.person_class:
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                     w = x2 - x1
                     h = y2 - y1
-                    candidate = (int(x1), int(y1), int(w), int(h))
+                    candidate = (x1, y1, w, h)
+
                     if self._inside_roi(candidate):
-                        persons.append(candidate)
+                        # Create mask for the detected box area
+                        mask = np.zeros_like(thresh_diff)
+                        mask[y1:y2, x1:x2] = 1
+
+                        # Calculate the motion in the box area
+                        motion_pixels = cv2.countNonZero(thresh_diff * mask)
+                        area = w * h
+                        motion_percentage = (motion_pixels / area) * 100
+
+                        # If motion exceeds threshold, consider it a person
+                        if motion_percentage > self.movement_threshold:
+                            persons.append(candidate)
+
+        # Update the previous frame
+        self.previous_frame = frame.copy()
+
         return persons
 
     def draw_persons(self, frame, persons):
@@ -159,89 +190,19 @@ def combine_frames(frames):
 def main():
     cameras = [
         {
-            'url': 'rtsp://admin:L268C6B7@d5030edfff7a.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
-            'name': 'UVK Parking',
-            'roi': (100, 50, 400, 400)
-        },
-        {
             'url': 'rtsp://admin:L2EC70CF@d5030edfff7a.sn.mynetname.net:554/cam/realmonitor?channel=1&subtype=1',
             'name': 'UVK Gate',
             'roi': (250, 0, 450, 400)
         },
         {
+            'url': 'rtsp://admin:L268C6B7@d5030edfff7a.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
+            'name': 'UVK Parking',
+            'roi': (100, 50, 400, 400)
+        },
+        {
             'url': 'rtsp://admin:L201353B@hcr086zs3b5.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
             'name': 'LBB Rooftop',
             'roi': (150, 20, 500, 500)
-        },
-        {
-            'url': 'rtsp://admin:L2F2A85E@192.168.1.192:554/cam/realmonitor?channel=1&subtype=1',
-            'name': 'AirCity Labs',
-            'roi': (10, 10, 500, 400)
-        },
-        {
-            'url': 'rtsp://admin:L297FC1C@192.168.1.185:554/cam/realmonitor?channel=1&subtype=1',
-            'name': 'AirCity Garden',
-            'roi': (10, 10, 200, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/202',
-            'name': 'HIK Vision 1',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/302',
-            'name': 'HIK Vision 2',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/402',
-            'name': 'HIK Vision 3',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/502',
-            'name': 'HIK Vision 4',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/602',
-            'name': 'HIK Vision 5',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/702',
-            'name': 'HIK Vision 6',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/802',
-            'name': 'HIK Vision 7',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/902',
-            'name': 'HIK Vision 8',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1002',
-            'name': 'HIK Vision 9',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1102',
-            'name': 'HIK Vision 10',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1202',
-            'name': 'HIK Vision 11',
-            'roi': (10, 10, 300, 500)
-        },
-        {
-            'url': 'rtsp://admin:aircity2025@192.168.1.2:554/Streaming/channels/1402',
-            'name': 'HIK Vision 12',
-            'roi': (10, 10, 300, 500)
         }
     ]
 
