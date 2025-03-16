@@ -261,7 +261,7 @@ def main():
         },
         {
             'url': 'rtsp://user1:1234abcd@115.79.213.124:10554/streaming/channels/502',
-            'name': '(HIK) PNA Tennis 2',
+            'name': '(HIK) PNA Tennis',
             'roi': (50, 200, 800, 250)
         }
     ]
