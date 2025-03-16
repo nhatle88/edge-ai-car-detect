@@ -4,6 +4,7 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 import time
+import datetime
 import subprocess
 import math
 import os
@@ -154,10 +155,31 @@ class PersonDetection:
             print(f"Failed to export image to {filename}")
 
 
+def open_stream(rtsp_url, width=640, height=480):
+    # Force FFmpeg to use UDP transport for RTSP
+    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
+    cap = cv2.VideoCapture(rtsp_url)
+
+    # Set the capture resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+    time.sleep(2)  # Give the stream time to initialize
+    return cap
+
+
 def monitor_camera(camera_url, window_name, roi, stop_event, display_frames, display_lock):
     detection = PersonDetection(roi=roi)
-    cap = cv2.VideoCapture(camera_url)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+    # Use a different capture method based on the window name
+    if "(HIK)" in window_name:
+        print(f"{window_name}: Using HIK Vision capture method")
+        cap = open_stream(camera_url)
+    else:
+        cap = cv2.VideoCapture(camera_url)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        target_fps = 30
+        cap.set(cv2.CAP_PROP_FPS, target_fps)
 
     target_fps = 30
     frame_time = 1 / target_fps
@@ -236,6 +258,11 @@ def main():
             'url': 'rtsp://admin:L201353B@hcr086zs3b5.sn.mynetname.net:556/cam/realmonitor?channel=1&subtype=1',
             'name': 'LBB Rooftop',
             'roi': (150, 20, 500, 500)
+        },
+        {
+            'url': 'rtsp://user1:1234abcd@115.79.213.124:10554/streaming/channels/502',
+            'name': '(HIK) PNA Tennis',
+            'roi': (50, 200, 800, 250)
         }
     ]
 
